@@ -29,9 +29,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             CustomerNotFoundException ex, WebRequest request) {
         log.error("Customer not found: {}", ex.getMessage());
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("message", ex.getMessage());
-
         return buildErrorResponse(
                 HttpStatus.NOT_FOUND,
                 "Not Found",
@@ -45,7 +42,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         List<String> errors = ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("errors", errors);

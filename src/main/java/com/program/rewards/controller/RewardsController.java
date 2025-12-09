@@ -147,9 +147,9 @@ public class RewardsController {
         
         // Only use days parameter if startDate is not provided
         if (effectiveStartDate == null) {
-            if (days != null && days > 0) {
+            if (days != null) {
                 effectiveStartDate = effectiveEndDate.minusDays(days);
-            } else if (months != null && months > 0) {
+            } else if (months != null) {
                 effectiveStartDate = effectiveEndDate.minusMonths(months);
             }
         }

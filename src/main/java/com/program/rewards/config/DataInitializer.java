@@ -98,18 +98,18 @@ public class DataInitializer {
         return transactions;
     }
 
-    private List<Customer> initializeCustomers(CustomerRepository customerRepository) {
-        String[] CUSTOMER_NAMES = {
+    private void initializeCustomers(CustomerRepository customerRepository) {
+        String[] customerNames = {
                 "John Doe", "Jane Smith", "Robert Johnson", "Emily Davis", "Michael Brown"
         };
-        String[] CUSTOMER_EMAILS = {
+        String[] customerEmails = {
                 "john.doe@example.com", "jane.smith@example.com", "robert.j@example.com",
                 "emily.d@example.com", "michael.b@example.com"
         };
-        String[] PHONE_NUMBERS = {
+        String[] phoneNumbers = {
                 "+1-555-0101", "+1-555-0102", "+1-555-0103", "+1-555-0104", "+1-555-0105"
         };
-        String[] ADDRESSES = {
+        String[] addresses = {
                 "123 Main St, Anytown, USA",
                 "456 Oak Ave, Somewhere, USA",
                 "789 Pine Rd, Nowhere, USA",
@@ -119,13 +119,13 @@ public class DataInitializer {
 
         List<Customer> customers = new ArrayList<>();
         if (customerRepository.count() == 0) {
-            for (int i = 0; i < CUSTOMER_NAMES.length; i++) {
+            for (int i = 0; i < customerNames.length; i++) {
                 Customer customer = new Customer(
-                        CUSTOMER_NAMES[i],
-                        CUSTOMER_EMAILS[i],
+                        customerNames[i],
+                        customerEmails[i],
                         LocalDate.now().minusMonths(i),
-                        PHONE_NUMBERS[i],
-                        ADDRESSES[i]
+                        phoneNumbers[i],
+                        addresses[i]
                 );
                 customers.add(customerRepository.save(customer));
             }
@@ -133,6 +133,5 @@ public class DataInitializer {
         } else {
             customers = customerRepository.findAll();
         }
-        return customers;
     }
 }
