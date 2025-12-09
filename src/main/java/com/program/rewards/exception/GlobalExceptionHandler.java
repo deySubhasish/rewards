@@ -28,14 +28,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleCustomerNotFoundException(
             CustomerNotFoundException ex, WebRequest request) {
         log.error("Customer not found: {}", ex.getMessage());
-        
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("message", ex.getMessage());
-        
+
         return buildErrorResponse(
-            HttpStatus.NOT_FOUND,
-            "Not Found",
-            ((ServletWebRequest) request).getRequest().getRequestURI()
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                ((ServletWebRequest) request).getRequest().getRequestURI()
         );
     }
 
@@ -49,20 +49,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("errors", errors);
-        
+
         ResponseEntity<Object> response = buildErrorResponse(
-            HttpStatus.BAD_REQUEST,
-            "Validation failed",
-            ((ServletWebRequest) request).getRequest().getRequestURI()
+                HttpStatus.BAD_REQUEST,
+                "Validation failed",
+                ((ServletWebRequest) request).getRequest().getRequestURI()
         );
-        
+
         // Add errors to the response body
         if (response.getBody() instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
             responseBody.putAll(body);
         }
-        
+
         return response;
     }
 
@@ -76,35 +76,35 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ex.getRequiredType() == null ? "" : ("Expected type: " + ex.getRequiredType().getSimpleName()));
 
         return buildErrorResponse(
-            HttpStatus.BAD_REQUEST,
-            error,
-            ((ServletWebRequest) request).getRequest().getRequestURI()
+                HttpStatus.BAD_REQUEST,
+                error,
+                ((ServletWebRequest) request).getRequest().getRequestURI()
         );
     }
 
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<Object> handleAllUncaughtException(Exception ex, WebRequest request) {
-//        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
-//
-//        Map<String, Object> body = new LinkedHashMap<>();
-//        body.put("message", "An unexpected error occurred");
-//
-//        ResponseEntity<Object> response = buildErrorResponse(
-//            HttpStatus.INTERNAL_SERVER_ERROR,
-//            "Internal Server Error",
-//            request.getDescription(false).replace("uri=", "")
-//        );
-//
-//        // Add message to the response body
-//        if (response.getBody() instanceof Map) {
-//            @SuppressWarnings("unchecked")
-//            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-//            responseBody.putAll(body);
-//        }
-//
-//        return response;
-//    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleAllUncaughtException(Exception ex, WebRequest request) {
+        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", "An unexpected error occurred");
+
+        ResponseEntity<Object> response = buildErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        // Add message to the response body
+        if (response.getBody() instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+            responseBody.putAll(body);
+        }
+
+        return response;
+    }
 
     /**
      * Builds a standardized error response with the given parameters

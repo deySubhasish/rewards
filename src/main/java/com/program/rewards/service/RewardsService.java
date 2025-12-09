@@ -49,7 +49,7 @@ public class RewardsService {
     }
 
     public List<Transaction> getRewardEligibleTransactions(Long customerId, LocalDateTime startDate, LocalDateTime endDate) {
-        log.debug("Fetching reward-eligible transactions for customer: {}, startDate: {}, endDate: {}", 
+        log.debug("Fetching reward-eligible transactions for customer: {}, startDate: {}, endDate: {}",
                 customerId, startDate, endDate);
         List<Transaction> transactions;
         try {
@@ -73,6 +73,7 @@ public class RewardsService {
             throw e;
         }
     }
+
     @Cacheable(
             value = REWARDS_CACHE,
             key = "{#customerId, #startDate, #endDate}",
@@ -85,7 +86,7 @@ public class RewardsService {
             Customer customer = getCustomerById(customerId);
             List<Transaction> transactions = getRewardEligibleTransactions(customerId, startDate, endDate);
             RewardsResponse response = calculateMonthlyBreakdown(customer, transactions);
-            log.info("Successfully calculated rewards for customer: {}. Total points: {}", 
+            log.info("Successfully calculated rewards for customer: {}. Total points: {}",
                     customerId, response.getTotalPoints());
             return response;
         } catch (Exception e) {
@@ -105,9 +106,9 @@ public class RewardsService {
 
 
     private RewardsResponse calculateMonthlyBreakdown(Customer customer, List<Transaction> transactions) {
-        log.debug("Calculating monthly breakdown for customer: {} with {} transactions", 
+        log.debug("Calculating monthly breakdown for customer: {} with {} transactions",
                 customer.getId(), transactions.size());
-                
+
         Map<String, Integer> monthlyPoints = transactions.stream()
                 .collect(Collectors.groupingBy(
                         t -> YearMonth.from(t.getTransactionDate()).format(DateTimeFormatter.ofPattern("yyyy-MM")),
@@ -115,32 +116,32 @@ public class RewardsService {
                 ));
 
         int totalPoints = monthlyPoints.values().stream().mapToInt(Integer::intValue).sum();
-        
+
         log.debug("Monthly points breakdown for customer {}: {}", customer.getId(), monthlyPoints);
         log.debug("Total points calculated: {}", totalPoints);
-        
+
         return new RewardsResponse(customer, totalPoints, monthlyPoints);
     }
 
     private int calculatePoints(Double amount) {
         log.trace("Calculating points for amount: {}", amount);
         int points = 0;
-        
+
         // 2 points for every dollar over $100
         if (amount > 100) {
             double over100 = amount - 100;
             points += (int) (over100 * 2);
-            log.trace("Added {} points for amount over $100: {}", (int)(over100 * 2), over100);
+            log.trace("Added {} points for amount over $100: {}", points, over100);
             amount = 100.0; // Remaining amount for next tier
         }
-        
+
         // 1 point for every dollar between $50 and $100
         if (amount > MIN_AMOUNT_FOR_REWARDS) {
-            double between50and100 = amount - MIN_AMOUNT_FOR_REWARDS;
-            points += (int) between50and100;
-            log.trace("Added {} points for amount between $50 and $100: {}", (int)between50and100, between50and100);
+            int between50and100 = (int) (amount - MIN_AMOUNT_FOR_REWARDS);
+            points += between50and100;
+            log.trace("Added {} points for amount between $50 and $100: {}", between50and100, between50and100);
         }
-        
+
         log.trace("Total points calculated: {}", points);
         return points;
     }

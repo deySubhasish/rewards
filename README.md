@@ -21,8 +21,8 @@ A Spring Boot application that calculates and manages customer rewards points ba
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd assignment
+   git clone https://github.com/deySubhasish/rewards
+   cd rewards
    ```
 
 2. **Build the application**

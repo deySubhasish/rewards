@@ -17,8 +17,6 @@ import org.springframework.cache.CacheManager;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +42,6 @@ class RewardsServiceTest {
     private RewardsService rewardsService;
 
     private Customer testCustomer;
-    private List<Transaction> testTransactions;
 
     @BeforeEach
     void setUp() {
@@ -54,19 +51,7 @@ class RewardsServiceTest {
         testCustomer.setId(1L);
 
         // Setup test transactions
-        Transaction t1 = new Transaction();
-        t1.setId(1L);
-        t1.setAmount(120.0);
-        t1.setStatus("COMPLETED");
-        t1.setTransactionDate(LocalDateTime.now().minusDays(10));
 
-        Transaction t2 = new Transaction();
-        t2.setId(2L);
-        t2.setAmount(80.0);
-        t2.setStatus("COMPLETED");
-        t2.setTransactionDate(LocalDateTime.now().minusDays(5));
-
-        testTransactions = Arrays.asList(t1, t2);
     }
 
     @Test
@@ -98,22 +83,51 @@ class RewardsServiceTest {
     void getRewardEligibleTransactions_ShouldFilterCompletedAndEligibleTransactions() {
         // Arrange
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startDate = now.minusDays(30);
-        LocalDateTime endDate = now;
+        LocalDateTime startDate = now.minusDays(7);
+        LocalDateTime endDate = now.minusDays(2);
+
+        Transaction t1 = new Transaction();
+        t1.setId(1L);
+        t1.setAmount(120.0);
+        t1.setStatus("COMPLETED");
+        t1.setTransactionDate(LocalDateTime.now().minusDays(10));
+
+        Transaction t2 = new Transaction();
+        t2.setId(2L);
+        t2.setAmount(80.0);
+        t2.setStatus("COMPLETED");
+        t2.setTransactionDate(LocalDateTime.now().minusDays(5));
+
+        Transaction t3 = new Transaction();
+        t3.setId(3L);
+        t3.setAmount(310.0);
+        t3.setStatus("COMPLETED");
+        t3.setTransactionDate(LocalDateTime.now());
+
+        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(
+                eq(1L), eq("COMPLETED"), eq(50.0)))
+                .thenReturn(Arrays.asList(t1,t2,t3));
+
+        assertEquals(3, rewardsService.getRewardEligibleTransactions(1L, null, null).size());
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate), eq(endDate)))
-                .thenReturn(testTransactions);
-
-        // Act
-        List<Transaction> result = rewardsService.getRewardEligibleTransactions(1L, startDate, endDate);
+                .thenReturn(Collections.singletonList(t1));
 
         // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
-                eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate), eq(endDate));
-        verifyNoMoreInteractions(transactionRepository);
+        assertEquals(1, rewardsService.getRewardEligibleTransactions(1L, startDate, endDate).size());
+
+        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
+                eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate)))
+                .thenReturn(Arrays.asList(t2,t3));
+        // Assert
+        assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, startDate, null).size());
+
+        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
+                eq(1L), eq("COMPLETED"), eq(50.0), eq(endDate)))
+                .thenReturn(Arrays.asList(t2,t3));
+        // Assert
+        assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, null, endDate).size());
     }
 
     @Test
@@ -133,6 +147,19 @@ class RewardsServiceTest {
     void calculateMonthlyRewards_ShouldReturnCorrectRewards() {
         // Arrange
         when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
+        Transaction t1 = new Transaction();
+        t1.setId(1L);
+        t1.setAmount(120.0);
+        t1.setStatus("COMPLETED");
+        t1.setTransactionDate(LocalDateTime.now().minusDays(10));
+
+        Transaction t2 = new Transaction();
+        t2.setId(2L);
+        t2.setAmount(80.0);
+        t2.setStatus("COMPLETED");
+        t2.setTransactionDate(LocalDateTime.now().minusDays(5));
+
+        List<Transaction> testTransactions = Arrays.asList(t1, t2);
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(anyLong(), anyString(), anyDouble()))
                 .thenReturn(testTransactions);
 
