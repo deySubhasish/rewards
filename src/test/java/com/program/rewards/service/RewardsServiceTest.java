@@ -11,8 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
@@ -30,12 +28,6 @@ class RewardsServiceTest {
 
     @Mock
     private TransactionRepository transactionRepository;
-
-    @Mock
-    private CacheManager cacheManager;
-
-    @Mock
-    private Cache cache;
 
     @InjectMocks
     private RewardsService rewardsService;
@@ -181,6 +173,18 @@ class RewardsServiceTest {
 
         // Test case 3: Amount greater than 100
         assertEquals(90, (int) method.invoke(rewardsService, 120.0));  // 2*(120-100) + 50 = 90 points
+
+        // Amount between 50 and 100
+        assertEquals(25, (int) method.invoke(rewardsService, 75.0),
+                "75 - 50 = 25 points");
+
+        // Amount exactly 100
+        assertEquals(50, (int) method.invoke(rewardsService, 100.0),
+                "50 points for first $50 + 0 points for next $50");
+
+        // Large amount
+        assertEquals(250, (int) method.invoke(rewardsService, 200.0),
+                "2*(200-100) + 50 = 250 points");
     }
 
     @Test
@@ -211,6 +215,23 @@ class RewardsServiceTest {
         assertEquals(1L, response.getCustomer().getId());
         assertFalse(response.getMonthlyPoints().isEmpty());
         assertTrue(response.getTotalPoints() > 0);
+    }
+
+    @Test
+    void calculateMonthlyRewards_ShouldHandleNoTransactions() {
+        // Arrange
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
+        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(anyLong(), anyString(), anyDouble()))
+                .thenReturn(Collections.emptyList());
+
+        // Act
+        RewardsResponse response = rewardsService.calculateMonthlyRewards(1L, null, null, false);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(1L, response.getCustomer().getId());
+        assertTrue(response.getMonthlyPoints().isEmpty());
+        assertEquals(0, response.getTotalPoints());
     }
 
     @Test
