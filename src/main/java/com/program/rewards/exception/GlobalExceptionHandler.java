@@ -43,6 +43,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         List<String> errors = ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .toList();
+        if (errors.size() == 1) {
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    errors.get(0),
+                    ((ServletWebRequest) request).getRequest().getRequestURI()
+            );
+        }
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("errors", errors);

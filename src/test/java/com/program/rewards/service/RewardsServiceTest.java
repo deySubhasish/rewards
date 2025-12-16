@@ -79,55 +79,96 @@ class RewardsServiceTest {
         });
     }
 
+    private Transaction createTestTransaction(Long id, double amount, int daysAgo) {
+        Transaction transaction = new Transaction();
+        transaction.setId(id);
+        transaction.setAmount(amount);
+        transaction.setStatus("COMPLETED");
+        transaction.setTransactionDate(LocalDateTime.now().minusDays(daysAgo));
+        return transaction;
+    }
+
     @Test
-    void getRewardEligibleTransactions_ShouldFilterCompletedAndEligibleTransactions() {
+    void getRewardEligibleTransactions_ShouldReturnAllCompletedTransactions_WhenNoDateRangeProvided() {
         // Arrange
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startDate = now.minusDays(7);
-        LocalDateTime endDate = now.minusDays(2);
-
-        Transaction t1 = new Transaction();
-        t1.setId(1L);
-        t1.setAmount(120.0);
-        t1.setStatus("COMPLETED");
-        t1.setTransactionDate(LocalDateTime.now().minusDays(10));
-
-        Transaction t2 = new Transaction();
-        t2.setId(2L);
-        t2.setAmount(80.0);
-        t2.setStatus("COMPLETED");
-        t2.setTransactionDate(LocalDateTime.now().minusDays(5));
-
-        Transaction t3 = new Transaction();
-        t3.setId(3L);
-        t3.setAmount(310.0);
-        t3.setStatus("COMPLETED");
-        t3.setTransactionDate(LocalDateTime.now());
+        Transaction t1 = createTestTransaction(1L, 120.0, 10);
+        Transaction t2 = createTestTransaction(2L, 80.0, 5);
+        Transaction t3 = createTestTransaction(3L, 310.0, 0);
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(
                 eq(1L), eq("COMPLETED"), eq(50.0)))
                 .thenReturn(Arrays.asList(t1, t2, t3));
 
-        assertEquals(3, rewardsService.getRewardEligibleTransactions(1L, null, null).size());
+        // Act
+        List<Transaction> result = rewardsService.getRewardEligibleTransactions(1L, null, null);
+
+        // Assert
+        assertEquals(3, result.size());
+        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThan(1L, "COMPLETED", 50.0);
+    }
+
+    @Test
+    void getRewardEligibleTransactions_ShouldFilterByDateRange_WhenBothDatesProvided() {
+        // Arrange
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startDate = now.minusDays(7);
+        LocalDateTime endDate = now.minusDays(2);
+        
+        Transaction t1 = createTestTransaction(1L, 120.0, 5); // Within range
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate), eq(endDate)))
                 .thenReturn(Collections.singletonList(t1));
 
+        // Act
+        List<Transaction> result = rewardsService.getRewardEligibleTransactions(1L, startDate, endDate);
+
         // Assert
-        assertEquals(1, rewardsService.getRewardEligibleTransactions(1L, startDate, endDate).size());
+        assertEquals(1, result.size());
+        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
+                1L, "COMPLETED", 50.0, startDate, endDate);
+    }
+
+    @Test
+    void getRewardEligibleTransactions_ShouldFilterByStartDate_WhenOnlyStartDateProvided() {
+        // Arrange
+        LocalDateTime startDate = LocalDateTime.now().minusDays(7);
+        
+        Transaction t2 = createTestTransaction(2L, 80.0, 5);  // After start date
+        Transaction t3 = createTestTransaction(3L, 310.0, 0); // After start date
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate)))
                 .thenReturn(Arrays.asList(t2, t3));
+
+        // Act
+        List<Transaction> result = rewardsService.getRewardEligibleTransactions(1L, startDate, null);
+
         // Assert
-        assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, startDate, null).size());
+        assertEquals(2, result.size());
+        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
+                1L, "COMPLETED", 50.0, startDate);
+    }
+
+    @Test
+    void getRewardEligibleTransactions_ShouldFilterByEndDate_WhenOnlyEndDateProvided() {
+        // Arrange
+        LocalDateTime endDate = LocalDateTime.now().minusDays(2);
+        
+        Transaction t1 = createTestTransaction(1L, 120.0, 10); // Before end date
+        Transaction t2 = createTestTransaction(2L, 80.0, 5);   // Before end date
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(endDate)))
-                .thenReturn(Arrays.asList(t2, t3));
+                .thenReturn(Arrays.asList(t1, t2));
+
+        // Act
+        List<Transaction> result = rewardsService.getRewardEligibleTransactions(1L, null, endDate);
+
         // Assert
-        assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, null, endDate).size());
+        assertEquals(2, result.size());
+        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
+                1L, "COMPLETED", 50.0, endDate);
     }
 
     @Test
