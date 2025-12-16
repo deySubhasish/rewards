@@ -3,7 +3,6 @@ package com.program.rewards.service;
 import com.program.rewards.dto.RewardsResponse;
 import com.program.rewards.entity.Customer;
 import com.program.rewards.entity.Transaction;
-import com.program.rewards.exception.CustomerNotFoundException;
 import com.program.rewards.repository.CustomerRepository;
 import com.program.rewards.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.TreeMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,22 +29,17 @@ public class RewardsService {
     private final CustomerRepository customerRepository;
     private final TransactionRepository transactionRepository;
 
-    private static final String REWARDS_CACHE = "rewards";
+    public static final String REWARDS_CACHE = "rewards";
     public static final String COMPLETED_STATUS = "COMPLETED";
     public static final Double MIN_AMOUNT_FOR_REWARDS = 50.0;
 
     public Customer getCustomerById(Long id) {
         log.debug("Looking up customer with id: {}", id);
-        try {
-            return customerRepository.findById(id)
-                    .orElseThrow(() -> {
-                        log.error("Customer not found with id: {}", id);
-                        return new CustomerNotFoundException(id);
-                    });
-        } catch (Exception e) {
-            log.error("Error occurred while fetching customer with id: {}", id, e);
-            throw e;
-        }
+        return customerRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Customer not found with id: {}", id);
+                    return new NoSuchElementException("Customer not found with id: " + id);
+                });
     }
 
     public List<Transaction> getRewardEligibleTransactions(Long customerId, LocalDateTime startDate, LocalDateTime endDate) {
@@ -119,7 +110,7 @@ public class RewardsService {
 
         // Create a formatter for the month-year display
         DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
-        
+
         // Create a TreeMap to sort by YearMonth in descending order
         Map<YearMonth, Integer> sortedMonthlyPoints = transactions.stream()
                 .collect(Collectors.groupingBy(

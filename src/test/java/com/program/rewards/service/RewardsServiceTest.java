@@ -3,7 +3,6 @@ package com.program.rewards.service;
 import com.program.rewards.dto.RewardsResponse;
 import com.program.rewards.entity.Customer;
 import com.program.rewards.entity.Transaction;
-import com.program.rewards.exception.CustomerNotFoundException;
 import com.program.rewards.repository.CustomerRepository;
 import com.program.rewards.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +73,7 @@ class RewardsServiceTest {
         when(customerRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(CustomerNotFoundException.class, () -> {
+        assertThrows(NoSuchElementException.class, () -> {
             rewardsService.getCustomerById(999L);
         });
     }

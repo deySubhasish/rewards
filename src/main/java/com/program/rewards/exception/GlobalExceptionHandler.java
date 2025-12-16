@@ -16,25 +16,13 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    public static final String TIMESTAMP = "timestamp";
-
-    @ExceptionHandler(CustomerNotFoundException.class)
-    public ResponseEntity<Object> handleCustomerNotFoundException(
-            CustomerNotFoundException ex, WebRequest request) {
-        log.error("Customer not found: {}", ex.getMessage());
-
-        return buildErrorResponse(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                ((ServletWebRequest) request).getRequest().getRequestURI()
-        );
-    }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Object> handleConstraintViolation(ConstraintViolationException ex, WebRequest request) {
@@ -110,6 +98,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return response;
     }
 
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Object> handleResourceNotFoundException(
+            NoSuchElementException ex, WebRequest request) {
+        log.error("Not found: {}", ex.getMessage());
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                ((ServletWebRequest) request).getRequest().getRequestURI()
+        );
+    }
+
     /**
      * Builds a standardized error response with the given parameters
      *
@@ -124,7 +123,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             String path) {
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put(TIMESTAMP, LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now());
         body.put("status", status.value());
         body.put("error", message);
         body.put("path", path);
