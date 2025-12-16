@@ -5,6 +5,8 @@ server:
 
 # H2 Database Configuration
 spring:
+  main:
+    banner-mode: off
   application:
     name: rewards-service
   datasource:

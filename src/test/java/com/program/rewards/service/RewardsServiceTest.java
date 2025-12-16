@@ -106,7 +106,7 @@ class RewardsServiceTest {
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(
                 eq(1L), eq("COMPLETED"), eq(50.0)))
-                .thenReturn(Arrays.asList(t1,t2,t3));
+                .thenReturn(Arrays.asList(t1, t2, t3));
 
         assertEquals(3, rewardsService.getRewardEligibleTransactions(1L, null, null).size());
 
@@ -119,13 +119,13 @@ class RewardsServiceTest {
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate)))
-                .thenReturn(Arrays.asList(t2,t3));
+                .thenReturn(Arrays.asList(t2, t3));
         // Assert
         assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, startDate, null).size());
 
         when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(endDate)))
-                .thenReturn(Arrays.asList(t2,t3));
+                .thenReturn(Arrays.asList(t2, t3));
         // Assert
         assertEquals(2, rewardsService.getRewardEligibleTransactions(1L, null, endDate).size());
     }
@@ -164,7 +164,7 @@ class RewardsServiceTest {
                 .thenReturn(testTransactions);
 
         // Act
-        RewardsResponse response = rewardsService.calculateMonthlyRewards(1L, null, null);
+        RewardsResponse response = rewardsService.calculateMonthlyRewards(1L, null, null, false);
 
         // Assert
         assertNotNull(response);

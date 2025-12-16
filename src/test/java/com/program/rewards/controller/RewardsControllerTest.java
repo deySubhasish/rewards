@@ -19,8 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -51,12 +50,12 @@ class RewardsControllerTest {
         monthlyPoints.put("2023-01", 120);
         monthlyPoints.put("2023-02", 150);
         
-        testResponse = new RewardsResponse(testCustomer, 270, monthlyPoints);
+        testResponse = new RewardsResponse(testCustomer, 270, monthlyPoints,null);
     }
 
     @Test
     void getMonthlyRewards_WithValidCustomerIdAndDays_ShouldReturnOk() throws Exception {
-        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any()))
+        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any(),anyBoolean()))
                 .thenReturn(testResponse);
 
         mockMvc.perform(get("/api/customers/1/rewards?days=30")
@@ -70,7 +69,7 @@ class RewardsControllerTest {
 
     @Test
     void getMonthlyRewards_WithValidCustomerIdAndMonths_ShouldReturnOk() throws Exception {
-        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any()))
+        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any(),anyBoolean()))
                 .thenReturn(testResponse);
 
         mockMvc.perform(get("/api/customers/1/rewards?months=6")
@@ -81,7 +80,7 @@ class RewardsControllerTest {
 
     @Test
     void getMonthlyRewards_WithValidDateRange_ShouldReturnOk() throws Exception {
-        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any()))
+        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any(),anyBoolean()))
                 .thenReturn(testResponse);
 
         String startDate = LocalDateTime.now().minusMonths(1).format(formatter);
@@ -108,7 +107,7 @@ class RewardsControllerTest {
 
     @Test
     void getMonthlyRewards_WithNoParameters_ShouldUseDefaultDateRange() throws Exception {
-        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any()))
+        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any(),anyBoolean()))
                 .thenReturn(testResponse);
 
         mockMvc.perform(get("/api/customers/1/rewards")
@@ -119,7 +118,7 @@ class RewardsControllerTest {
 
     @Test
     void getMonthlyRewards_WithBothDaysAndMonths_ShouldPrioritizeDays() throws Exception {
-        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any()))
+        when(rewardsService.calculateMonthlyRewards(anyLong(), any(), any(),anyBoolean()))
                 .thenReturn(testResponse);
 
         mockMvc.perform(get("/api/customers/1/rewards?days=30&months=6")
