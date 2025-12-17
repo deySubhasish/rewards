@@ -65,20 +65,33 @@ GET /api/customers/1/rewards?startDate=2023-01-01T00:00:00&endDate=2023-12-31T23
 **Response:**
 ```json
 {
-  "customerId": 1,
-  "totalRewardPoints": 120,
-  "monthlyRewards": [
+  "customer": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "joinDate": "2023-01-15",
+    "phone": "123-456-7890",
+    "address": "123 Main St"
+  },
+  "totalPoints": 210,
+  "monthlyPoints": {
+    "December 2025": 90,
+    "November 2025": 120
+  },
+  "transactions": [
     {
-      "yearMonth": "2023-11",
-      "rewardPoints": 90
-    },
-    {
-      "yearMonth": "2023-12",
-      "rewardPoints": 30
+      "id": 1,
+      "customerId": 1,
+      "amount": 120.0,
+      "status": "COMPLETED",
+      "transactionDate": "2023-12-15T14:30:00"
     }
   ]
 }
+
 ```
+
+Note: The transactions array will only be included if showTransactions=true
 
 ## Error Responses
 
