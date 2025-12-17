@@ -49,9 +49,8 @@ class TransactionRepositoryTest {
 
         // Act
         List<Transaction> transactions = transactionRepository
-                .findByCustomerIdAndStatusAndAmountGreaterThan(
-                        testCustomer1.getId(), "COMPLETED", 50.0
-                );
+                .findEligibleTransactions(
+                        testCustomer1.getId(), "COMPLETED", 50.0, null, null);
 
         // Assert
         assertEquals(1, transactions.size());
@@ -75,7 +74,7 @@ class TransactionRepositoryTest {
 
         // Act
         List<Transaction> transactions = transactionRepository
-                .findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
+                .findEligibleTransactions(
                         testCustomer1.getId(),
                         "COMPLETED",
                         50.0,
@@ -103,11 +102,11 @@ class TransactionRepositoryTest {
 
         // Act
         List<Transaction> transactions = transactionRepository
-                .findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
+                .findEligibleTransactions(
                         testCustomer1.getId(),
                         "COMPLETED",
                         50.0,
-                        now.minusDays(10)
+                        now.minusDays(10),null
                 );
 
         // Assert
@@ -129,10 +128,10 @@ class TransactionRepositoryTest {
 
         // Act
         List<Transaction> transactions = transactionRepository
-                .findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
+                .findEligibleTransactions(
                         testCustomer1.getId(),
                         "COMPLETED",
-                        50.0,
+                        50.0, null,
                         now.minusDays(10)
                 );
 

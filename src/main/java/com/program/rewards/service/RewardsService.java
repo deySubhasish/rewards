@@ -5,6 +5,7 @@ import com.program.rewards.entity.Customer;
 import com.program.rewards.entity.Transaction;
 import com.program.rewards.repository.CustomerRepository;
 import com.program.rewards.repository.TransactionRepository;
+import com.program.rewards.util.RewardsUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,12 +15,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Slf4j
 @Service
@@ -31,7 +31,6 @@ public class RewardsService {
 
     public static final String REWARDS_CACHE = "rewards";
     public static final String COMPLETED_STATUS = "COMPLETED";
-    public static final Double MIN_AMOUNT_FOR_REWARDS = 50.0;
 
     public Customer getCustomerById(Long id) {
         log.debug("Looking up customer with id: {}", id);
@@ -45,25 +44,16 @@ public class RewardsService {
     public List<Transaction> getRewardEligibleTransactions(Long customerId, LocalDateTime startDate, LocalDateTime endDate) {
         log.debug("Fetching reward-eligible transactions for customer: {}, startDate: {}, endDate: {}",
                 customerId, startDate, endDate);
-        List<Transaction> transactions;
         try {
-            if (startDate != null && endDate != null) {
-                transactions = transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
-                        customerId, COMPLETED_STATUS, MIN_AMOUNT_FOR_REWARDS, startDate, endDate);
-            } else if (startDate != null) {
-                transactions = transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
-                        customerId, COMPLETED_STATUS, MIN_AMOUNT_FOR_REWARDS, startDate);
-            } else if (endDate != null) {
-                transactions = transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
-                        customerId, COMPLETED_STATUS, MIN_AMOUNT_FOR_REWARDS, endDate);
-            } else {
-                transactions = transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(
-                        customerId, COMPLETED_STATUS, MIN_AMOUNT_FOR_REWARDS);
-            }
+            List<Transaction> transactions = transactionRepository.findEligibleTransactions(
+                    customerId,
+                    COMPLETED_STATUS,
+                    RewardsUtil.MIN_AMOUNT_FOR_REWARDS,
+                    startDate,
+                    endDate);
+
             log.debug("Found {} eligible transactions for customer: {}", transactions.size(), customerId);
-            return transactions.stream()
-                    .filter(t -> t.getTransactionDate() != null)  // Filter out null transaction dates
-                    .toList();
+            return transactions;
         } catch (Exception e) {
             log.error("Error fetching reward-eligible transactions for customer: {}", customerId, e);
             throw e;
@@ -112,20 +102,7 @@ public class RewardsService {
         DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
 
         // Create a TreeMap to sort by YearMonth in descending order
-        Map<YearMonth, Integer> sortedMonthlyPoints = transactions.stream()
-                .collect(Collectors.groupingBy(
-                        t -> YearMonth.from(t.getTransactionDate()),
-                        TreeMap::new,  // Use TreeMap to sort by YearMonth
-                        Collectors.summingInt(t -> calculatePoints(t.getAmount()))
-                ))
-                .descendingMap();  // Sort in descending order (newest first)
-
-        // Convert to the final map with formatted month-year strings
-        Map<String, Integer> monthlyPoints = new LinkedHashMap<>();
-        sortedMonthlyPoints.forEach((yearMonth, points) -> {
-            String monthYear = yearMonth.format(monthYearFormatter);
-            monthlyPoints.put(monthYear, points);
-        });
+        Map<String, Integer> monthlyPoints = RewardsUtil.getMonthlyPoints(transactions, monthYearFormatter);
 
         int totalPoints = monthlyPoints.values().stream().mapToInt(Integer::intValue).sum();
 
@@ -136,29 +113,7 @@ public class RewardsService {
                 .toList() : null);
     }
 
-    private int calculatePoints(Double amount) {
-        log.trace("Calculating points for amount: {}", amount);
-        BigDecimal amountBD = BigDecimal.valueOf(amount);
-        BigDecimal minAmount = BigDecimal.valueOf(MIN_AMOUNT_FOR_REWARDS);
-        int points = 0;
 
-        // 2 points for every dollar over $100
-        if (amount > 100) {
-            points = amountBD.subtract(BigDecimal.valueOf(100))
-                    .multiply(BigDecimal.valueOf(2)).intValue();
-            log.trace("Added {} points for amount over $100", points);
-            amountBD = BigDecimal.valueOf(100);
-        }
 
-        // 1 point for every dollar between $50 and $100
-        if (amount > MIN_AMOUNT_FOR_REWARDS) {
-            int between50and100 = amountBD.subtract(minAmount).intValue();
-            points += between50and100;
-            log.trace("Added {} points for amount between $50 and $100: {}", between50and100, between50and100);
-        }
-
-        log.trace("Total points calculated: {}", points);
-        return points;
-    }
 
 }

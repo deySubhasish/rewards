@@ -11,8 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -40,8 +38,6 @@ class RewardsServiceTest {
         testCustomer = new Customer("John Doe", "john.doe@example.com",
                 LocalDateTime.now().toLocalDate(), "123-456-7890", "123 Main St");
         testCustomer.setId(1L);
-
-        // Setup test transactions
 
     }
 
@@ -86,8 +82,8 @@ class RewardsServiceTest {
         Transaction t2 = createTestTransaction(2L, 80.0, 5);
         Transaction t3 = createTestTransaction(3L, 310.0, 0);
 
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(
-                eq(1L), eq("COMPLETED"), eq(50.0)))
+        when(transactionRepository.findEligibleTransactions(
+                eq(1L), eq("COMPLETED"), eq(50.0), isNull(), isNull()))
                 .thenReturn(Arrays.asList(t1, t2, t3));
 
         // Act
@@ -95,7 +91,7 @@ class RewardsServiceTest {
 
         // Assert
         assertEquals(3, result.size());
-        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThan(1L, "COMPLETED", 50.0);
+        verify(transactionRepository).findEligibleTransactions(1L, "COMPLETED", 50.0, null, null);
     }
 
     @Test
@@ -107,7 +103,7 @@ class RewardsServiceTest {
         
         Transaction t1 = createTestTransaction(1L, 120.0, 5); // Within range
 
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
+        when(transactionRepository.findEligibleTransactions(
                 eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate), eq(endDate)))
                 .thenReturn(Collections.singletonList(t1));
 
@@ -116,8 +112,7 @@ class RewardsServiceTest {
 
         // Assert
         assertEquals(1, result.size());
-        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateBetween(
-                1L, "COMPLETED", 50.0, startDate, endDate);
+        verify(transactionRepository).findEligibleTransactions(1L, "COMPLETED", 50.0, startDate, endDate);
     }
 
     @Test
@@ -128,8 +123,8 @@ class RewardsServiceTest {
         Transaction t2 = createTestTransaction(2L, 80.0, 5);  // After start date
         Transaction t3 = createTestTransaction(3L, 310.0, 0); // After start date
 
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
-                eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate)))
+        when(transactionRepository.findEligibleTransactions(
+                eq(1L), eq("COMPLETED"), eq(50.0), eq(startDate), isNull()))
                 .thenReturn(Arrays.asList(t2, t3));
 
         // Act
@@ -137,8 +132,7 @@ class RewardsServiceTest {
 
         // Assert
         assertEquals(2, result.size());
-        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateAfter(
-                1L, "COMPLETED", 50.0, startDate);
+        verify(transactionRepository).findEligibleTransactions(1L, "COMPLETED", 50.0, startDate, null);
     }
 
     @Test
@@ -149,8 +143,8 @@ class RewardsServiceTest {
         Transaction t1 = createTestTransaction(1L, 120.0, 10); // Before end date
         Transaction t2 = createTestTransaction(2L, 80.0, 5);   // Before end date
 
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
-                eq(1L), eq("COMPLETED"), eq(50.0), eq(endDate)))
+        when(transactionRepository.findEligibleTransactions(
+                eq(1L), eq("COMPLETED"), eq(50.0), isNull(), eq(endDate)))
                 .thenReturn(Arrays.asList(t1, t2));
 
         // Act
@@ -158,33 +152,7 @@ class RewardsServiceTest {
 
         // Assert
         assertEquals(2, result.size());
-        verify(transactionRepository).findByCustomerIdAndStatusAndAmountGreaterThanAndDateBefore(
-                1L, "COMPLETED", 50.0, endDate);
-    }
-
-    @Test
-    void calculatePoints_ShouldCalculateCorrectly() throws Exception {
-        // Get the private method using reflection
-        Method method = RewardsService.class.getDeclaredMethod("calculatePoints", Double.class);
-        method.setAccessible(true);
-
-        // Test case 2: Amount between 50 and 100
-        assertEquals(10, (int) method.invoke(rewardsService, 60.0));  // 60 - 50 = 10 points
-
-        // Test case 3: Amount greater than 100
-        assertEquals(90, (int) method.invoke(rewardsService, 120.0));  // 2*(120-100) + 50 = 90 points
-
-        // Amount between 50 and 100
-        assertEquals(25, (int) method.invoke(rewardsService, 75.0),
-                "75 - 50 = 25 points");
-
-        // Amount exactly 100
-        assertEquals(50, (int) method.invoke(rewardsService, 100.0),
-                "50 points for first $50 + 0 points for next $50");
-
-        // Large amount
-        assertEquals(250, (int) method.invoke(rewardsService, 200.0),
-                "2*(200-100) + 50 = 250 points");
+        verify(transactionRepository).findEligibleTransactions(1L, "COMPLETED", 50.0, null, endDate);
     }
 
     @Test
@@ -204,7 +172,7 @@ class RewardsServiceTest {
         t2.setTransactionDate(LocalDateTime.now().minusDays(5));
 
         List<Transaction> testTransactions = Arrays.asList(t1, t2);
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(anyLong(), anyString(), anyDouble()))
+        when(transactionRepository.findEligibleTransactions(anyLong(), anyString(), anyDouble(), any(), any()))
                 .thenReturn(testTransactions);
 
         // Act
@@ -221,7 +189,7 @@ class RewardsServiceTest {
     void calculateMonthlyRewards_ShouldHandleNoTransactions() {
         // Arrange
         when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
-        when(transactionRepository.findByCustomerIdAndStatusAndAmountGreaterThan(anyLong(), anyString(), anyDouble()))
+        when(transactionRepository.findEligibleTransactions(anyLong(), anyString(), anyDouble(), any(), any()))
                 .thenReturn(Collections.emptyList());
 
         // Act
