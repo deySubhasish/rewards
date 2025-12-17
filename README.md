@@ -126,6 +126,18 @@ Run the test suite with:
    mvn  test
    ```
 
+## Screenshot
+Build and Test Success
+
+<img width="1992" height="1317" alt="image" src="https://github.com/user-attachments/assets/806d8acc-d9ef-49d8-8a2f-d5f6c0a10fb9" />
+
+
+
+API Call Success
+
+<img width="453" height="846" alt="image" src="https://github.com/user-attachments/assets/959d6ec8-176c-4317-99ba-4468c5baa8a5" />
+
+
 ## Built With
 
 - Spring Boot 3.5.8
