@@ -2,6 +2,7 @@ package com.program.rewards.controller;
 
 import com.program.rewards.dto.RewardsResponse;
 import com.program.rewards.service.RewardsService;
+import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -107,6 +108,7 @@ public class RewardsController {
                             ))
             )
     })
+    @Timed(value = "customer.rewards", description = "Track count and latency")
     @GetMapping(value = "/customers/{customerId}/rewards", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RewardsResponse> getMonthlyRewards(
             @Parameter(description = "ID of the customer", required = true, example = "1")

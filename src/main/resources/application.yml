@@ -1,7 +1,7 @@
 
 # Server Configuration
 server:
-  port: 8080
+  port: 8082
 
 # H2 Database Configuration
 spring:
@@ -36,9 +36,26 @@ logging:
     org.springframework: INFO
     org.hibernate: INFO
     com.program.rewards: DEBUG
-    org.springframework.cache: DEBUG
+    org.springframework.cache: TRACE
 
 
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    enable:
+      all: true
+  tracing:
+    sampling:
+      # 1.0 means log every single request.
+      # Set to 0.1 in production to only trace 10% of requests.
+      probability: 1.0
 
 rewards:
   cache:
